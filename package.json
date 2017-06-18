@@ -1,0 +1,36 @@
+{
+  "name": "blue-router",
+  "version": "1.0.0",
+  "description": "Universal router powered by Bluebird promises.",
+  "main": "index.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smikodanic/blue-router.git"
+  },
+  "keywords": [
+    "router",
+    "blue",
+    "bluebird",
+    "promises",
+    "http server",
+    "tcp server",
+    "udp server",
+    "redis pub sub",
+    "browser"
+  ],
+  "author": "Sasa Mikodanic",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/smikodanic/blue-router/issues"
+  },
+  "homepage": "https://github.com/smikodanic/blue-router#readme",
+  "dependencies": {
+    "bluebird": "^3.5.0"
+  }
+}
