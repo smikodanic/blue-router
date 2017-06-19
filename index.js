@@ -130,12 +130,21 @@ var router = function (ctx) {
                 ctx.req = {};
             }
 
-            //add trailing slash if doesnt exist /
+            //add trailing slash if doesnt exist  ( register/john -> /register/john )
             if (route.indexOf('/') !== 0) {
                 route = '/' + route;
             }
             if (ctx.uri.indexOf('/') !== 0) {
                 ctx.uri = '/' + ctx.uri;
+            }
+
+            //remove ending slash if exist  ( /register/john/ -> /register/john )
+            //because we want to match route='/register/john' and uri='/register/john/'
+            if (ctx.uri.lastIndexOf('/') === ctx.uri.length - 1) {
+                ctx.uri = ctx.uri.slice(0, -1);
+            }
+            if (route.lastIndexOf('/') === route.length - 1) {
+                route = route.slice(0, -1);
             }
 
             //parse uri {path: '/register/john', querystring: 'x=abc&y=123'}
