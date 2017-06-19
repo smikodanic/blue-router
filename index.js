@@ -135,6 +135,9 @@ var getParameters = function (uriPath, route) {
 var router = function (ctx) {
     'use strict';
 
+    //array of promises
+    var promises = [];
+
     return {
 
         when: function (route) {
@@ -163,6 +166,9 @@ var router = function (ctx) {
 
             //parse uri {path: '/register/john', querystring: 'x=abc&y=123'}
             var uriParsed = uriParser(ctx.uri);
+            if (uriParsed.path.lastIndexOf('/') === uriParsed.path.length - 1) {
+                uriParsed.path = uriParsed.path.slice(0, -1); //remove ending slash
+            }
             bluedebug(ctx.opts.debug, '+uriParsed: ' + uriParsed.path + ' AND ' + uriParsed.querystring);
 
             //get route base /register/:name/:age -> /register/
@@ -190,6 +196,8 @@ var router = function (ctx) {
                 bluedebug(ctx.opts.debug, '++ctx.req.query: ' + JSON.stringify(ctx.req.query));
 
                 promis = BPromise.resolve(ctx);
+                promises.push(promis);
+
             } else if (route.indexOf('/:') !== -1 && numUriPathParts === numRouteParts && uriParsed.path.indexOf(routeBase) !== -1) { //param match '/register/john' === '/register/:name'
                 bluedebug(ctx.opts.debug, '+PARAM MATCH\n');
 
@@ -208,11 +216,13 @@ var router = function (ctx) {
                 bluedebug(ctx.opts.debug, '++ctx.req.query: ' + JSON.stringify(ctx.req.query));
                 bluedebug(ctx.opts.debug, '\n');
 
-
                 promis = BPromise.resolve(ctx);
+                promises.push(promis);
+
             } else { //no match
                 bluedebug(ctx.opts.debug, '+NO MATCH\n');
                 promis = BPromise.reject();
+                promises.push(promis);
             }
 
             return promis;
