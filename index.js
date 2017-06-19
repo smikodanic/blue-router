@@ -131,12 +131,12 @@ var getParameters = function (uriPath, route) {
 };
 
 
+//array of promises
+var promises = [];
+
 
 var router = function (ctx) {
     'use strict';
-
-    //array of promises
-    var promises = [];
 
     return {
 
@@ -226,7 +226,12 @@ var router = function (ctx) {
             }
 
             return promis;
-        }
+        }, //when
+
+        final: function () {
+            bluedebug(ctx.opts.debug, '+++FINAL');
+            return BPromise.any(promises);
+        } //final
 
     };
 
