@@ -42,9 +42,9 @@ when() and final() returns bluebird promise and after that you can use any of bl
 Trailing and ending slashes can be ignored so all of these URIs will be valid:
 ```javascript
 /cli/register/john/23/true?x=123&y=abc&z=false
-/cli/register/john/23true?x=123&y=abc&z=false
+/cli/register/john/23/true/?x=123&y=abc&z=false
 cli/register/john/23/true?x=123&y=abc&z=false
-cli/register/john/23true?x=123&y=abc&z=false
+cli/register/john/23/true/?x=123&y=abc&z=false
 ```
 
 ## Parameters
