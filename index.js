@@ -3,6 +3,20 @@ const BPromise = require('bluebird') || Promise;
 
 
 /**
+ * Blue Route debugger.
+ * @param  {Boolean} optsDebug - true | false
+ * @param  {String} msg        - debug message
+ * @return {Void}
+ */
+var bluedebug = function (optsDebug, msg) {
+    'use strict';
+    if (optsDebug) {
+        console.log(msg);
+    }
+};
+
+
+/**
  * URI parser
  * @param  {String} uri - /register/john?x=abc&y=123
  * @return {Object} - {path: '/register/john', querystring: 'x=abc&y=123'}
@@ -124,7 +138,7 @@ var router = function (ctx) {
     return {
 
         when: function (route) {
-            console.log('initialized uri: ', ctx.uri, ' initialized route: ', route);
+            bluedebug(ctx.opts.debug, '+++++++uri: ' + ctx.uri + '\n+++++route: ' + route);
 
             if (!ctx.req) {
                 ctx.req = {};
@@ -149,10 +163,11 @@ var router = function (ctx) {
 
             //parse uri {path: '/register/john', querystring: 'x=abc&y=123'}
             var uriParsed = uriParser(ctx.uri);
+            bluedebug(ctx.opts.debug, '+uriParsed: ' + uriParsed.path + ' AND ' + uriParsed.querystring);
 
             //get route base /register/:name/:age -> /register/
             var routeBase = extractRouteBase(route);
-            console.log('routeBase: ', routeBase);
+            bluedebug(ctx.opts.debug, '+routeBase: ' + routeBase);
 
 
             //get number of uri and route parts
@@ -162,16 +177,21 @@ var router = function (ctx) {
             //matching uri and route
             var promis;
             if (route === uriParsed.path) { //exact match '/register/john' === '/register/john'
-                console.log('EXACT MATCH');
+                bluedebug(ctx.opts.debug, '+EXACT MATCH\n');
 
                 //get query object x=abc&y=123&z=true -> {x: 'abc', y: 123, z: true}
                 if (!!uriParsed.querystring) {
                     ctx.req.query = getQuery(uriParsed.querystring);
                 }
 
+                //debug
+                bluedebug(ctx.opts.debug, '++ctx.req.body: ' + JSON.stringify(ctx.req.body));
+                bluedebug(ctx.opts.debug, '++ctx.req.params: ' + JSON.stringify(ctx.req.params));
+                bluedebug(ctx.opts.debug, '++ctx.req.query: ' + JSON.stringify(ctx.req.query));
+
                 promis = BPromise.resolve(ctx);
             } else if (route.indexOf('/:') !== -1 && numUriPathParts === numRouteParts && uriParsed.path.indexOf(routeBase) !== -1) { //param match '/register/john' === '/register/:name'
-                console.log('PARAM MATCH');
+                bluedebug(ctx.opts.debug, '+PARAM MATCH\n');
 
                 //get query object x=abc&y=123&z=true -> {x: 'abc', y: 123, z: true}
                 if (!!uriParsed.querystring) {
@@ -182,9 +202,16 @@ var router = function (ctx) {
                 var params = getParameters(uriParsed.path, route);
                 ctx.req.params = params;
 
+                //debug
+                bluedebug(ctx.opts.debug, '++ctx.req.body: ' + JSON.stringify(ctx.req.body));
+                bluedebug(ctx.opts.debug, '++ctx.req.params: ' + JSON.stringify(ctx.req.params));
+                bluedebug(ctx.opts.debug, '++ctx.req.query: ' + JSON.stringify(ctx.req.query));
+                bluedebug(ctx.opts.debug, '\n');
+
+
                 promis = BPromise.resolve(ctx);
             } else { //no match
-                console.log('NO MATCH');
+                bluedebug(ctx.opts.debug, '+NO MATCH\n');
                 promis = BPromise.reject();
             }
 
