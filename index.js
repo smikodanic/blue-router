@@ -228,10 +228,30 @@ var router = function (ctx) {
             return promis;
         }, //when
 
-        final: function () {
-            bluedebug(ctx.opts.debug, '+++FINAL');
-            return BPromise.any(promises);
-        } //final
+        /* Execute on each URI */
+        do: function () {
+            return BPromise.resolve(ctx);
+        }, //do
+
+        /* Execute when no URI matches against route */
+        notfound: function () {
+
+            //find is there any of promises fulfilled
+            var tf = false;
+            promises.forEach(function (promise) {
+                tf = tf || promise.isFulfilled();
+            });
+
+            var p;
+            if (!tf) {//if none of routes are not matched against URI
+                bluedebug(ctx.opts.debug, '++NOTFOUND: ' + ctx.uri);
+                p = BPromise.resolve(ctx);
+            } else {//if one route (at least) is matched against URI
+                p = BPromise.reject();
+            }
+            return p;
+
+        } //notfound
 
     };
 
@@ -242,8 +262,8 @@ var router = function (ctx) {
 
 /**
  * Add redirect function to bluebird promise.
- * @param  {[type]} newRoute [description]
- * @return {[type]}          [description]
+ * @param  {String} newRoute - redirection route
+ * @return {Promise}
  */
 BPromise.prototype.redirect = function (newRoute) {
     'use strict';
@@ -257,7 +277,6 @@ BPromise.prototype.redirect = function (newRoute) {
 
     return promisRedirection;
 };
-
 
 
 

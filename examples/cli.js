@@ -21,7 +21,7 @@ var context = {
         cl: console.log
     },
     opts: {
-        debug: false
+        debug: true
     }
 };
 
@@ -92,4 +92,9 @@ br(context).when('/cli/register/:name/:year/:employed').then(require('./cli/matc
 //node cli.js '{"cmd": "/cli/lis", "data": {}}'
 //node cli.js '{"cmd": "/cli/lista", "data": {}}'
 //node cli.js '{"cmd": "/cli/list/bad", "data": {}}'
-br(context).final().then(require('./cli/notfound.js')).catch(errLog);
+br(context).notfound().then(require('./cli/notfound.js')).catch(errLog); //put this after all when() methods
+
+
+
+//will be executed on each URI
+br(context).do().then(require('./cli/do.js')).catch(errLog);

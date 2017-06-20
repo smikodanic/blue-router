@@ -33,9 +33,10 @@ const br = require('blue-router');
 
 ## Methods
 - **br(context).when(route)** when 'context.uri' is matched against 'route' then function is executed
-- **br(context).final()** always put this method at the end (apply this for Error 404: Not found)
+- **br(context).notfound()** always put this method at the end (apply this for Error 404: Not found)
+- **br(context).do()** will be executed on each request
 
-when() and final() returns bluebird promise and after that you can use any of bluebird methods (then, spread, catch ...)
+All methods return bluebird promise and after that you can use any of bluebird methods (then, spread, catch, delay ...)
 
 
 ## Slashes
@@ -58,10 +59,10 @@ Variables in Blue Router are named simmilar to ExpressJS:
 Use Bluebird *then()* to serially connect functions into chain.
 **br(context),then(func11).then(func12).then(func13).catch(logErr)**
 
-## Error 404
+## Error 404: Not Found
 To output error when route is not found put at the end:
 ```javascript
-br(context).final().catch(function () {console.log('Error 404: NOT FOUND');})
+br(context).notfound().then(function (ctx) {console.log('Error 404: ROUTE ' + ctx.uri + ' NOT FOUND');}).catch(errLog)
 ```
 
 
@@ -203,7 +204,11 @@ br(context).when('/cli/register/:name/:year/:employed').then(require('./match_pa
 //node cli.js '{"cmd": "/cli/lis", "data": {}}'
 //node cli.js '{"cmd": "/cli/lista", "data": {}}'
 //node cli.js '{"cmd": "/cli/list/bad", "data": {}}'
-br(context).final().catch(require('./notfound.js'));
+br(context).notfound().then(require('./cli/notfound.js')).catch(errLog); //put this after all when() methods
+
+
+//will be executed on each URI
+br(context).do().then(require('./cli/do.js')).catch(errLog);
 ```
 
 
