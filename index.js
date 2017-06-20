@@ -237,6 +237,31 @@ var router = function (ctx) {
 
 };
 
+
+
+
+/**
+ * Add redirect function to bluebird promise.
+ * @param  {[type]} newRoute [description]
+ * @return {[type]}          [description]
+ */
+BPromise.prototype.redirect = function (newRoute) {
+    'use strict';
+    // console.log(promises); //all promises before redirect() usage
+
+    var promisRedirection = BPromise.resolve(this)
+        .then(function (ctx) {
+            bluedebug(ctx.opts.debug, '++REDIRECT TO:' + newRoute);
+            return BPromise.resolve(ctx);
+        });
+
+    return promisRedirection;
+};
+
+
+
+
+
 //browser (global var)
 blue_router = router;
 

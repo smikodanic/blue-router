@@ -1,5 +1,5 @@
 const br = require('../index.js');
-var errLog = require('./errLog.js');
+var errLog = require('./cli/errLog.js');
 
 //input from console - cli input ($node cli.js {"cmd":"/cli/register/john/23/true","data":{}})
 var input = process.argv[2];
@@ -36,13 +36,20 @@ var context = {
 //node cli.js '{"cmd": "/cli/list/", "data": [{"id": 12}, {"id": 13}, {"id": 14}]}'
 //node cli.js '{"cmd": "cli/list", "data": [{"id": 12}, {"id": 13}, {"id": 14}]}'
 //node cli.js '{"cmd": "cli/list/", "data": [{"id": 12}, {"id": 13}, {"id": 14}]}'
-br(context).when('/cli/list').then(require('./match_exact.js').list).catch(errLog);
+br(context).when('/cli/list').then(require('./cli/match_exact.js').list).catch(errLog);
+
+/// redirection
+//node cli.js '{"cmd": "/cli/listall", "data": [{"id": 12}, {"id": 13}, {"id": 14}]}'
+//node cli.js '{"cmd": "/cli/listall/", "data": [{"id": 12}, {"id": 13}, {"id": 14}]}'
+//node cli.js '{"cmd": "cli/listall", "data": [{"id": 12}, {"id": 13}, {"id": 14}]}'
+//node cli.js '{"cmd": "cli/listall/", "data": [{"id": 12}, {"id": 13}, {"id": 14}]}'
+br(context).when('/cli/listall').redirect('/cli/list').then(require('./cli/match_exact.js').list).catch(errLog);
 
 //node cli.js '{"cmd": "/cli/getname/firstname", "data": {"name": "Sasa"}}'
 //node cli.js '{"cmd": "/cli/getname/firstname/", "data": {"name": "Sasa"}}'
 //node cli.js '{"cmd": "cli/getname/firstname", "data": {"name": "Sasa"}}'
 //node cli.js '{"cmd": "cli/getname/firstname/", "data": {"name": "Sasa"}}'
-br(context).when('/cli/getname/firstname/').then(require('./match_exact.js').getname).catch(errLog);
+br(context).when('/cli/getname/firstname/').then(require('./cli/match_exact.js').getname).catch(errLog);
 
 
 ////examples with uri query string
@@ -50,7 +57,7 @@ br(context).when('/cli/getname/firstname/').then(require('./match_exact.js').get
 //node cli.js '{"cmd": "/cli/login/?username=peter&password=pan", "data": {}}'
 //node cli.js '{"cmd": "cli/login?username=peter&password=pan", "data": {}}'
 //node cli.js '{"cmd": "cli/login/?username=peter&password=pan", "data": {}}'
-br(context).when('/cli/login').then(require('./match_exact.js').login).catch(errLog);
+br(context).when('/cli/login').then(require('./cli/match_exact.js').login).catch(errLog);
 
 
 
@@ -60,7 +67,7 @@ br(context).when('/cli/login').then(require('./match_exact.js').login).catch(err
 //node cli.js '{"cmd": "/cli/users/55/", "data": [{"id": 33, "name": "Peter"}, {"id": 55, "name": "Dean"}]}'
 //node cli.js '{"cmd": "cli/users/55", "data": [{"id": 33, "name": "Peter"}, {"id": 55, "name": "Dean"}]}'
 //node cli.js '{"cmd": "cli/users/55/", "data": [{"id": 33, "name": "Peter"}, {"id": 55, "name": "Dean"}]}'
-br(context).when('/cli/users/:id').then(require('./match_param.js').get_user_by_id).catch(errLog);
+br(context).when('/cli/users/:id').then(require('./cli/match_param.js').get_user_by_id).catch(errLog);
 
 //node cli.js '{"cmd": "/cli/register/john/23/true", "data": {"nick": "johnny"}}'
 //node cli.js '{"cmd": "/cli/register/john/23/true/", "data": {"nick": "johnny"}}'
@@ -72,7 +79,8 @@ br(context).when('/cli/users/:id').then(require('./match_param.js').get_user_by_
 //node cli.js '{"cmd": "/cli/register/john/23/true/?x=123&y=abc&z=false", "data": {"nick": "johnny"}}'
 //node cli.js '{"cmd": "cli/register/john/23/true?x=123&y=abc&z=false", "data": {"nick": "johnny"}}'
 //node cli.js '{"cmd": "cli/register/john/23/true/?x=123&y=abc&z=false", "data": {"nick": "johnny"}}'
-br(context).when('/cli/register/:name/:year/:employed').then(require('./match_param.js').register).catch(errLog);
+br(context).when('/cli/register/:name/:year/:employed').then(require('./cli/match_param.js').register).catch(errLog);
+
 
 
 
@@ -84,4 +92,4 @@ br(context).when('/cli/register/:name/:year/:employed').then(require('./match_pa
 //node cli.js '{"cmd": "/cli/lis", "data": {}}'
 //node cli.js '{"cmd": "/cli/lista", "data": {}}'
 //node cli.js '{"cmd": "/cli/list/bad", "data": {}}'
-br(context).final().catch(require('./notfound.js'));
+br(context).final().then(require('./cli/notfound.js')).catch(errLog);
