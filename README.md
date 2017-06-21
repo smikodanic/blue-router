@@ -15,7 +15,7 @@ It's really universal and very fast.
 ## Dependencies
 The only dependency is Bluebird package. The advantage is in rich [Bluebird API](http://bluebirdjs.com/docs/api-reference.html) methods.
 ```javascript
-const Promise = require('bluebird') //NodeJS
+const Promise = require('bluebird') //NodeJS or Browserify
 <script src="bluebird.min.js"></script> //Browser (client side)
 ```
 
@@ -32,21 +32,55 @@ const br = require('blue-router');
 
 
 ## Methods
-- **br(context).when(route)** when 'context.uri' is matched against 'route' then function is executed
-- **br(context).notfound()** always put this method at the end (apply this for Error 404: Not found)
-- **br(context).do()** will be executed on each request
+- **br(context).when(route)**    when 'context.uri' is matched against 'route' function in then() is executed
+- **br(context).when(route1).redirect(route2)**    will redirect from 'route1' to 'route2'
+- **br(context).notfound()**    404 not found. Always put this method after all when() methods.
+- **br(context).do()**    will be executed on each request
 
-All methods return bluebird promise and after that you can use any of bluebird methods (then, spread, catch, delay ...)
+All methods when(), redirect(), notfound(), do() return bluebird promise and after that you can use any of bluebird methods (then, spread, catch, delay ...)
+
 
 
 ## Slashes
 Trailing and ending slashes can be ignored so all of these URIs will be valid:
-```bash
+```
 /cli/register/john/23/true?x=123&y=abc&z=false
 /cli/register/john/23/true/?x=123&y=abc&z=false
 cli/register/john/23/true?x=123&y=abc&z=false
 cli/register/john/23/true/?x=123&y=abc&z=false
 ```
+
+
+## Case Insensitive URIs
+URIs are case insensitive so all of these URIs will work:
+```bash
+/register/john
+/Register/John
+/REGISTER/John
+```
+
+
+## Regular Expressions in ropute definition
+[RegExp syntax](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp) is allowed in route definition.
+- . any character
+- \* match 0 or more times
+- \+ match 1 or more times
+- ? match 0 or 1 time
+- | alternative
+- () grouping
+- [] set of chars
+- {m, n} repetition modifier (at least m but at most n)
+- **\\\w**  word
+- **\\\W**  non-word
+- **\\\d**  digit
+- **\\\D**  non-digit
+- ... and others
+```
+br(context).when('/cli/get.+/[0-9]+').then(require('./cli/match_exact.js').getname).catch(errLog);
+br(context).when('/cli/shop(s)?/w{3}/:name/:year').then(require('./cli/match_param.js').shop).catch(errLog);
+br(context).when('/cli/shop/\\d+/:name/:year/:color').then(require('./cli/match_param.js').shop).catch(errLog);
+```
+
 
 ## Parameters
 Variables in Blue Router are named simmilar to ExpressJS:
@@ -55,19 +89,23 @@ Variables in Blue Router are named simmilar to ExpressJS:
 - **ctx.req.query** for example *?username=john&password=as1234* will return *{username: 'john', password: 'as1234'}*
 
 
+
 ## Chaining
-Use Bluebird *then()* to serially connect functions into chain.
-**br(context),then(func11).then(func12).then(func13).catch(logErr)**
+Use Bluebird *then()* to serially connect functions.
+This will make your code more readable and error handling easier.
+**br(context).when(route).then(func11).then(func12).then(func13).catch(logErr)**
+
+
 
 ## Error 404: Not Found
-To output error when route is not found put at the end:
+Method notfound() must be placed after all when() methods.
 ```javascript
 br(context).notfound().then(function (ctx) {console.log('Error 404: ROUTE ' + ctx.uri + ' NOT FOUND');}).catch(errLog)
 ```
 
 
 ## Debugging
-To activate debugging set **context.opts.debug: true**
+To activate Blue Router debugging set **context.opts.debug: true**
 
 
 
@@ -117,14 +155,11 @@ URI 'context.uri' can be fetched dynamically from browser's URL, HTTP/TCP/UDP se
 
 ## Examples
 
-- Command Line examples [CLI](https://github.com/smikodanic/blue-router/examples/cli.js)
+- [Command Line examples - CLI](https://github.com/smikodanic/blue-router/blob/master/examples/cli.js)
 
 ```javascript
-/*
- * CLI (Command Line) Example
- */
-const br = require('../index.js');
-var errLog = require('./errLog.js');
+const br = require('blue-router');
+var errLog = require('./cli/errLog.js');
 
 //input from console - cli input ($node cli.js {"cmd":"/cli/register/john/23/true","data":{}})
 var input = process.argv[2];
@@ -151,28 +186,52 @@ var context = {
 };
 
 
+
+
 ///////////// R O U T E S /////////////////////
+
 
 ///// EXACT MATCH
 
-//node cli.js '{"cmd": "/cli/list", "data": [{"id": 12}, {"id": 13}, {"id": 14}]}'
+//node cli.js '{"cmd": "/cli/list", "data": [{"id": 12}, {"id": 13}, {"id": 14}]}'  --> run this in Linux terminal
 //node cli.js '{"cmd": "/cli/list/", "data": [{"id": 12}, {"id": 13}, {"id": 14}]}'
 //node cli.js '{"cmd": "cli/list", "data": [{"id": 12}, {"id": 13}, {"id": 14}]}'
 //node cli.js '{"cmd": "cli/list/", "data": [{"id": 12}, {"id": 13}, {"id": 14}]}'
-br(context).when('/cli/list').then(require('./match_exact.js').list).catch(errLog);
+br(context).when('/cli/list').then(require('./cli/match_exact.js').list).catch(errLog);
+
+/// redirection
+//node cli.js '{"cmd": "/cli/listall", "data": [{"id": 12}, {"id": 13}, {"id": 14}]}'
+//node cli.js '{"cmd": "/cli/listall/", "data": [{"id": 12}, {"id": 13}, {"id": 14}]}'
+//node cli.js '{"cmd": "cli/listall", "data": [{"id": 12}, {"id": 13}, {"id": 14}]}'
+//node cli.js '{"cmd": "cli/listall/", "data": [{"id": 12}, {"id": 13}, {"id": 14}]}'
+br(context).when('/cli/listall').redirect('/cli/list').then(require('./cli/match_exact.js').list).catch(errLog);
 
 //node cli.js '{"cmd": "/cli/getname/firstname", "data": {"name": "Sasa"}}'
 //node cli.js '{"cmd": "/cli/getname/firstname/", "data": {"name": "Sasa"}}'
 //node cli.js '{"cmd": "cli/getname/firstname", "data": {"name": "Sasa"}}'
 //node cli.js '{"cmd": "cli/getname/firstname/", "data": {"name": "Sasa"}}'
-br(context).when('/cli/getname/firstname/').then(require('./match_exact.js').getname).catch(errLog);
+br(context).when('/cli/getname/firstname/').then(require('./cli/match_exact.js').getname).catch(errLog);
+
 
 ////examples with uri query string
 //node cli.js '{"cmd": "/cli/login?username=peter&password=pan", "data": {}}'
 //node cli.js '{"cmd": "/cli/login/?username=peter&password=pan", "data": {}}'
 //node cli.js '{"cmd": "cli/login?username=peter&password=pan", "data": {}}'
 //node cli.js '{"cmd": "cli/login/?username=peter&password=pan", "data": {}}'
-br(context).when('/cli/login').then(require('./match_exact.js').login).catch(errLog);
+br(context).when('/cli/login').then(require('./cli/match_exact.js').login).catch(errLog);
+
+
+////examples with regular expression
+//node cli.js '{"cmd": "/cli/getnames/12345", "data": {"name": "McCloud"}}'
+//node cli.js '{"cmd": "/cli/getnames/12345/", "data": {"name": "McCloud"}}'
+//node cli.js '{"cmd": "cli/getnames/12345", "data": {"name": "McCloud"}}'
+//node cli.js '{"cmd": "cli/getnames/12345/", "data": {"name": "McCloud"}}'
+//node cli.js '{"cmd": "/cli/getname/12/", "data": {"name": "McCloud"}}'
+br(context).when('/cli/get.+/[0-9]+').then(require('./cli/match_exact.js').getname).catch(errLog);
+
+
+
+
 
 
 ///// PARAM MATCH
@@ -181,7 +240,7 @@ br(context).when('/cli/login').then(require('./match_exact.js').login).catch(err
 //node cli.js '{"cmd": "/cli/users/55/", "data": [{"id": 33, "name": "Peter"}, {"id": 55, "name": "Dean"}]}'
 //node cli.js '{"cmd": "cli/users/55", "data": [{"id": 33, "name": "Peter"}, {"id": 55, "name": "Dean"}]}'
 //node cli.js '{"cmd": "cli/users/55/", "data": [{"id": 33, "name": "Peter"}, {"id": 55, "name": "Dean"}]}'
-br(context).when('/cli/users/:id').then(require('./match_param.js').get_user_by_id).catch(errLog);
+br(context).when('/cli/users/:id').then(require('./cli/match_param.js').get_user_by_id).catch(errLog);
 
 //node cli.js '{"cmd": "/cli/register/john/23/true", "data": {"nick": "johnny"}}'
 //node cli.js '{"cmd": "/cli/register/john/23/true/", "data": {"nick": "johnny"}}'
@@ -193,10 +252,26 @@ br(context).when('/cli/users/:id').then(require('./match_param.js').get_user_by_
 //node cli.js '{"cmd": "/cli/register/john/23/true/?x=123&y=abc&z=false", "data": {"nick": "johnny"}}'
 //node cli.js '{"cmd": "cli/register/john/23/true?x=123&y=abc&z=false", "data": {"nick": "johnny"}}'
 //node cli.js '{"cmd": "cli/register/john/23/true/?x=123&y=abc&z=false", "data": {"nick": "johnny"}}'
-br(context).when('/cli/register/:name/:year/:employed').then(require('./match_param.js').register).catch(errLog);
+br(context).when('/cli/register/:name/:year/:employed').then(require('./cli/match_param.js').register).catch(errLog);
+
+
+///examples with regular expression
+
+//node cli.js '{"cmd": "/cli/shops/www/CloudShop/1971", "data": {}}'
+//node cli.js '{"cmd": "/cli/shop/www/CloudShop/1971", "data": {}}'
+br(context).when('/cli/shop(s)?/w{3}/:name/:year').then(require('./cli/match_param.js').shop).catch(errLog);
+
+//\\d+ replaces one or more digits (integer numbers)
+//node cli.js '{"cmd": "/cli/shop/5/BetaShop/1978/red", "data": {}}'
+//node cli.js '{"cmd": "/cli/shop/567/BetaShop/1978/red", "data": {}}'
+br(context).when('/cli/shop/\\d+/:name/:year/:color').then(require('./cli/match_param.js').shop).catch(errLog);
+
+
+
 
 
 ///// NO MATCH (bad uri - Error 404)
+
 //node cli.js '{"cmd": "", "data": {}}'
 //node cli.js '{"cmd": "/", "data": {}}'
 //node cli.js '{"cmd": "/cli", "data": {}}'
@@ -207,7 +282,8 @@ br(context).when('/cli/register/:name/:year/:employed').then(require('./match_pa
 br(context).notfound().then(require('./cli/notfound.js')).catch(errLog); //put this after all when() methods
 
 
-//will be executed on each URI
+
+//always will be executed on each URI
 br(context).do().then(require('./cli/do.js')).catch(errLog);
 ```
 

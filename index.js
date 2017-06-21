@@ -1,3 +1,13 @@
+/**
+ ************ BLUE ROUTER - Roter powered by Bluebird promises. **************
+ * Basic synatx:
+ * const br = require('blue-router');
+ * var context = {uri: '/register/john?x=abc&y=123'};
+ * var route = '/register/:name';
+ * br(context).when(route).then().catch();
+ */
+
+
 /*For browser side scripting include <script src="bluebird.js"></script>*/
 const BPromise = require('bluebird') || Promise;
 
@@ -18,16 +28,52 @@ var bluedebug = function (optsDebug, msg) {
 
 /**
  * URI parser
- * @param  {String} uri - /register/john?x=abc&y=123
- * @return {Object} - {path: '/register/john', querystring: 'x=abc&y=123'}
+ * @param  {String} uri - /register/john?x=abc&y=123  (uri === context.uri)
+ * @return {Object} - {path: '/register/john', pathBase: '/register', querystring: 'x=abc&y=123'}
+ *
+ * Notice:
+ * 1. When route is '/register/:name/:age' and uri is /register/john/23?x=abc&y=123 then uriParsed = {path: '/register/john/23', pathBase: '/register', querystring: 'x=abc&y=123'}
+ * 2. When route is '/register/john/55' and uri is /register/john/55?x=abc&y=123 then uriParsed = {path: '/register/john/55', pathBase: '/register/john/55', querystring: 'x=abc&y=123'} (path == pathBase on EXACT MATCH)
  */
-var uriParser = function (uri) {
+var uriParser = function (uri, route) {
     'use strict';
     var uriDivided = uri.split('?');
+
+    var path = uriDivided[0];
+    var querystring = uriDivided[1];
+
+    //get pathBase
+    var pathBase = '';
+    if (route.indexOf('/:') !== -1) {//route has parameter definition /register/:name/:age
+        var pathParts = path.split('/');
+        var routeParts = route.split('/');
+
+        // console.log('--pathParts: ', pathParts);
+        // console.log('--routeParts: ', routeParts);
+
+        //find how many parameters route has
+        var routeParameters = routeParts.filter(function (routePart) {
+            return (routePart.indexOf(':') === 0); // ':name'
+        });
+
+        //remove parameter parts from pathParts
+        // console.log('--routeParameters.length', routeParameters.length);
+        pathParts.splice(-routeParameters.length, routeParameters.length); //removing last routeParameters.length elements and result is ['', 'register']
+
+        // console.log('--pathParts: ', pathParts);
+
+        pathBase = pathParts.join('/');
+
+    } else {
+        pathBase = path;
+    }
+
     var uriParsed = {
-        path: uriDivided[0],
-        querystring: uriDivided[1]
+        path: path,
+        pathBase: pathBase,
+        querystring: querystring
     };
+
     return uriParsed;
 };
 
@@ -55,7 +101,7 @@ var extractRouteBase = function (route) {
 
     var routeBase = routeBaseArr.join('/'); // /register/
 
-    return routeBase;
+    return '/' + routeBase;
 };
 
 
@@ -164,26 +210,33 @@ var router = function (ctx) {
                 route = route.slice(0, -1);
             }
 
-            //parse uri {path: '/register/john', querystring: 'x=abc&y=123'}
-            var uriParsed = uriParser(ctx.uri);
-            if (uriParsed.path.lastIndexOf('/') === uriParsed.path.length - 1) {
-                uriParsed.path = uriParsed.path.slice(0, -1); //remove ending slash
-            }
-            bluedebug(ctx.opts.debug, '+uriParsed: ' + uriParsed.path + ' AND ' + uriParsed.querystring);
-
             //get route base /register/:name/:age -> /register/
             var routeBase = extractRouteBase(route);
             bluedebug(ctx.opts.debug, '+routeBase: ' + routeBase);
 
+            //parse uri {path: '/register/john', querystring: 'x=abc&y=123'}
+            var uriParsed = uriParser(ctx.uri, route);
+            if (uriParsed.path.lastIndexOf('/') === uriParsed.path.length - 1) {
+                uriParsed.path = uriParsed.path.slice(0, -1); //remove ending slash
+            }
+            bluedebug(ctx.opts.debug, '+uriParsed.path: ' + uriParsed.path + ' +uriParsed.pathBase: ' + uriParsed.pathBase + ' +uriParsed.querystring: ' + uriParsed.querystring);
 
             //get number of uri and route parts
             var numUriPathParts = uriParsed.path.split('/').length;
             var numRouteParts = route.split('/').length;
 
+            //regular expression matching
+            var routeBaseReg = new RegExp('^' + routeBase + '$', 'i');
+            var regExpMatch = uriParsed.pathBase.match(routeBaseReg);
+            bluedebug(ctx.opts.debug, '+routeBaseReg: ' + routeBaseReg + ' +uriParsed.pathBase: ' + uriParsed.pathBase + ' =====regExpMatch: ' + JSON.stringify(regExpMatch));
+
+
             //matching uri and route
             var promis;
-            if (route === uriParsed.path) { //exact match '/register/john' === '/register/john'
-                bluedebug(ctx.opts.debug, '+EXACT MATCH\n');
+            if ((route === uriParsed.path || !!regExpMatch) && route.indexOf('/:') === -1) { //exact match '/register/john' === '/register/john'
+                !!regExpMatch
+                    ? bluedebug(ctx.opts.debug, '+EXACT MATCH - REGEXP\n')
+                    : bluedebug(ctx.opts.debug, '+EXACT MATCH\n');
 
                 //get query object x=abc&y=123&z=true -> {x: 'abc', y: 123, z: true}
                 if (!!uriParsed.querystring) {
@@ -198,8 +251,10 @@ var router = function (ctx) {
                 promis = BPromise.resolve(ctx);
                 promises.push(promis);
 
-            } else if (route.indexOf('/:') !== -1 && numUriPathParts === numRouteParts && uriParsed.path.indexOf(routeBase) !== -1) { //param match '/register/john' === '/register/:name'
-                bluedebug(ctx.opts.debug, '+PARAM MATCH\n');
+            } else if ((uriParsed.path.indexOf(routeBase) !== -1 || !!regExpMatch) && route.indexOf('/:') !== -1 && numUriPathParts === numRouteParts) { //param match '/register/john' === '/register/:name'
+                !!regExpMatch
+                    ? bluedebug(ctx.opts.debug, '+PARAM MATCH - REGEXP\n')
+                    : bluedebug(ctx.opts.debug, '+PARAM MATCH\n');
 
                 //get query object x=abc&y=123&z=true -> {x: 'abc', y: 123, z: true}
                 if (!!uriParsed.querystring) {

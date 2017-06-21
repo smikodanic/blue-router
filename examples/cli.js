@@ -21,7 +21,7 @@ var context = {
         cl: console.log
     },
     opts: {
-        debug: true
+        debug: false
     }
 };
 
@@ -29,6 +29,7 @@ var context = {
 
 
 ///////////// R O U T E S /////////////////////
+
 
 ///// EXACT MATCH
 
@@ -45,6 +46,8 @@ br(context).when('/cli/list').then(require('./cli/match_exact.js').list).catch(e
 //node cli.js '{"cmd": "cli/listall/", "data": [{"id": 12}, {"id": 13}, {"id": 14}]}'
 br(context).when('/cli/listall').redirect('/cli/list').then(require('./cli/match_exact.js').list).catch(errLog);
 
+// br(context).when('/cli/lista(ll)?').redirect('/cli/list').then(require('./cli/match_exact.js').list).catch(errLog); //wit regexp
+
 //node cli.js '{"cmd": "/cli/getname/firstname", "data": {"name": "Sasa"}}'
 //node cli.js '{"cmd": "/cli/getname/firstname/", "data": {"name": "Sasa"}}'
 //node cli.js '{"cmd": "cli/getname/firstname", "data": {"name": "Sasa"}}'
@@ -58,6 +61,18 @@ br(context).when('/cli/getname/firstname/').then(require('./cli/match_exact.js')
 //node cli.js '{"cmd": "cli/login?username=peter&password=pan", "data": {}}'
 //node cli.js '{"cmd": "cli/login/?username=peter&password=pan", "data": {}}'
 br(context).when('/cli/login').then(require('./cli/match_exact.js').login).catch(errLog);
+
+
+////examples with regular expression
+//node cli.js '{"cmd": "/cli/getnames/12345", "data": {"name": "McCloud"}}'
+//node cli.js '{"cmd": "/cli/getnames/12345/", "data": {"name": "McCloud"}}'
+//node cli.js '{"cmd": "cli/getnames/12345", "data": {"name": "McCloud"}}'
+//node cli.js '{"cmd": "cli/getnames/12345/", "data": {"name": "McCloud"}}'
+//node cli.js '{"cmd": "/cli/getname/12/", "data": {"name": "McCloud"}}'
+br(context).when('/cli/get.+/[0-9]+').then(require('./cli/match_exact.js').getname).catch(errLog);
+
+
+
 
 
 
@@ -82,9 +97,23 @@ br(context).when('/cli/users/:id').then(require('./cli/match_param.js').get_user
 br(context).when('/cli/register/:name/:year/:employed').then(require('./cli/match_param.js').register).catch(errLog);
 
 
+///examples with regular expression
+
+//node cli.js '{"cmd": "/cli/shops/www/CloudShop/1971", "data": {}}'
+//node cli.js '{"cmd": "/cli/shop/www/CloudShop/1971", "data": {}}'
+br(context).when('/cli/shop(s)?/w{3}/:name/:year').then(require('./cli/match_param.js').shop).catch(errLog);
+
+// \\d+ replaces one or more digits (integer numbers)
+//node cli.js '{"cmd": "/cli/shop/5/BetaShop/1978/red", "data": {}}'
+//node cli.js '{"cmd": "/cli/shop/567/BetaShop/1978/red", "data": {}}'
+br(context).when('/cli/shop/\\d+/:name/:year/:color').then(require('./cli/match_param.js').shop).catch(errLog);
+
+
+
 
 
 ///// NO MATCH (bad uri - Error 404)
+
 //node cli.js '{"cmd": "", "data": {}}'
 //node cli.js '{"cmd": "/", "data": {}}'
 //node cli.js '{"cmd": "/cli", "data": {}}'
@@ -96,5 +125,5 @@ br(context).notfound().then(require('./cli/notfound.js')).catch(errLog); //put t
 
 
 
-//will be executed on each URI
+//always will be executed on each URI
 br(context).do().then(require('./cli/do.js')).catch(errLog);
