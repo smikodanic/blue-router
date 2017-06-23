@@ -60,7 +60,7 @@ URIs are case insensitive so all of these URIs will work:
 ```
 
 
-## Regular Expressions in ropute definition
+## Regular Expressions in route definition
 [RegExp syntax](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp) is allowed in route definition.
 - . any character
 - \* match 0 or more times
