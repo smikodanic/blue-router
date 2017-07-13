@@ -297,6 +297,8 @@ var router = function (ctx) {
                 tf = tf || promise.isFulfilled();
             });
 
+            promises = []; //reset
+
             var p;
             if (!tf) {//if none of routes are not matched against URI
                 bluedebug(ctx.opts.debug, '++NOTFOUND: ' + ctx.uri);
