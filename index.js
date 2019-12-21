@@ -276,7 +276,7 @@ var router = function (ctx) {
 
             } else { //no match
                 bluedebug(ctx.opts.debug, '+NO MATCH\n');
-                promis = BPromise.reject(new Error('NO MATCH'));
+                promis = BPromise.reject(new Error(''));
                 promises.push(promis);
             }
 
@@ -304,7 +304,7 @@ var router = function (ctx) {
                 bluedebug(ctx.opts.debug, '++NOTFOUND: ' + ctx.uri);
                 p = BPromise.resolve(ctx);
             } else {//if one route (at least) is matched against URI
-                p = BPromise.reject(new Error('NOTFOUND'));
+                p = BPromise.reject(new Error(''));
             }
             return p;
 
