@@ -139,7 +139,7 @@ br(context).when('/register/:name/:age')
         console.log('ctx.req.query: ', ctx.req.query); //undefined
         console.log('ctx.req.params: ', ctx.req.params); //{name: 'John', age: 45}
         console.log('ctx.req.body: ', ctx.req.body); //{company: 'Cloud LLC', employers: 257}
-        
+
         ctx.res.socket.write('Message to TCP client.');
     })
     .catch(function (err) {
@@ -285,6 +285,19 @@ br(context).notfound().then(require('./cli/notfound.js')).catch(errLog); //put t
 
 //always will be executed on each URI
 br(context).do().then(require('./cli/do.js')).catch(errLog);
+```
+
+
+## Error Handling
+```
+========= errLog.js ==========
+==============================
+// print only messages where err.message is not empty string
+module.exports = (err) => {
+  if (!!err && !!err.message) {
+    console.log('errLog: ', err.stack);
+  }
+};
 ```
 
 
