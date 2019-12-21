@@ -13,7 +13,7 @@ try {
 
 //context object which define router behaviour
 var context = {
-    uri: input.cmd,
+    uri: input.cmd || input.uri,
     req: {
         body: input.data
     },
