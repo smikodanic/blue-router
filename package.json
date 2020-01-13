@@ -1,6 +1,6 @@
 {
   "name": "blue-router",
-  "version": "1.2.9",
+  "version": "1.2.10",
   "description": "Universal router powered by Bluebird promises.",
   "main": "index.js",
   "directories": {
