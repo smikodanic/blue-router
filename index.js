@@ -276,9 +276,15 @@ var router = function (ctx) {
 
             } else { //no match
                 bluedebug(ctx.opts.debug, '+NO MATCH\n');
-                promis = BPromise.reject(new Error(''));
+                promis = new BPromise(function(resolve, reject) {}); // retain promise in pending state
                 promises.push(promis);
             }
+
+            // console.log('\nroute:: ', route);
+            // console.log('promis.isFulfilled():: ', promis.isFulfilled());
+            // console.log('promis.isRejected():: ', promis.isRejected());
+            // console.log('promis.isPending():: ', promis.isPending());
+            // console.log('\n\n');
 
             return promis;
         }, //when
@@ -304,7 +310,7 @@ var router = function (ctx) {
                 bluedebug(ctx.opts.debug, '++NOTFOUND: ' + ctx.uri);
                 p = BPromise.resolve(ctx);
             } else {//if one route (at least) is matched against URI
-                p = BPromise.reject(new Error(''));
+                p = new BPromise(function(resolve, reject) {}); // retain promise in pending state
             }
             return p;
 
